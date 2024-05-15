@@ -1,0 +1,10 @@
+---
+apiVersion: ipam.amoyel.fr/v1alpha1
+kind: IPClaim
+metadata:
+  name: test3
+spec:
+  type: CIDR
+  ipCidrRef:
+    name: test2
+  specificChildCidr: 172.16.0.0/24

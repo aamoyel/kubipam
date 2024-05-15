@@ -1,0 +1,58 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: manager-role
+rules:
+- apiGroups:
+  - ipam.amoyel.fr
+  resources:
+  - ipcidrs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ipam.amoyel.fr
+  resources:
+  - ipcidrs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ipam.amoyel.fr
+  resources:
+  - ipcidrs/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ipam.amoyel.fr
+  resources:
+  - ipclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ipam.amoyel.fr
+  resources:
+  - ipclaims/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ipam.amoyel.fr
+  resources:
+  - ipclaims/status
+  verbs:
+  - get
+  - patch
+  - update

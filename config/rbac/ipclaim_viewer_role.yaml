@@ -1,0 +1,27 @@
+# permissions for end users to view ipclaims.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: ipclaim-viewer-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: kubipam
+    app.kubernetes.io/part-of: kubipam
+    app.kubernetes.io/managed-by: kustomize
+  name: ipclaim-viewer-role
+rules:
+- apiGroups:
+  - ipam.amoyel.fr
+  resources:
+  - ipclaims
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ipam.amoyel.fr
+  resources:
+  - ipclaims/status
+  verbs:
+  - get

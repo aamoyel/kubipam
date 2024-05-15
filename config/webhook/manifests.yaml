@@ -1,0 +1,52 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-ipam-amoyel-fr-v1alpha1-ipclaim
+  failurePolicy: Fail
+  name: mipclaim.kb.io
+  rules:
+  - apiGroups:
+    - ipam.amoyel.fr
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - ipclaims
+  sideEffects: None
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-ipam-amoyel-fr-v1alpha1-ipclaim
+  failurePolicy: Fail
+  name: vipclaim.kb.io
+  rules:
+  - apiGroups:
+    - ipam.amoyel.fr
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - ipclaims
+  sideEffects: None

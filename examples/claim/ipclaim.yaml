@@ -1,0 +1,9 @@
+---
+apiVersion: ipam.amoyel.fr/v1alpha1
+kind: IPClaim
+metadata:
+  name: test
+spec:
+  type: IP
+  ipCidrRef:
+    name: test

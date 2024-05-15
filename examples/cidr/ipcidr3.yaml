@@ -1,0 +1,6 @@
+apiVersion: ipam.amoyel.fr/v1alpha1
+kind: IPCidr
+metadata:
+  name: test3
+spec:
+  cidr: 172.17.1.0/16
