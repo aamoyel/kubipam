@@ -113,20 +113,33 @@ func (r *IPCidrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			}
 
 			// get child ips
-			ips := cidr.Usage().AvailableIPs
+			ips := cidr.Usage().AcquiredIPs
 			// get child cidrs
 			cidrs := cidr.Usage().AcquiredPrefixes
+			// check if the cidr have child prefixes before removing it (the ipamer doesn't send error when parent cidr has child prefixes).
+			if cidrs > 0 {
+				err = fmt.Errorf("cidr '%s' has %v chid prefixes, delete is not possible", ipcidrCR.Name, cidrs)
+				setIPCidrDeletionStatus(ipcidrCR, err)
+				if patchStatusErr := r.patchIPCidrStatus(ctx, ipcidrCR); patchStatusErr != nil {
+					err = kerror.NewAggregate([]error{err, patchStatusErr})
+					err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+					return ctrl.Result{RequeueAfter: requeueTime}, err
+				}
+				return ctrl.Result{RequeueAfter: 10 * time.Second}, err
+			}
 
 			// remove prefix from the ipam
 			_, err = r.Ipamer.DeletePrefix(ctx, ipcidrCR.Spec.Cidr)
 			if err != nil {
-				if ips != 0 && cidrs != 0 {
+				// write the error in the statuses if the cidr has ips
+				if ips > 0 {
 					setIPCidrDeletionStatus(ipcidrCR, err)
-					if err := r.patchIPCidrStatus(ctx, ipcidrCR); err != nil {
-						err = fmt.Errorf("unable to patch status after reconciliation succeeded: %w", err)
+					if patchStatusErr := r.patchIPCidrStatus(ctx, ipcidrCR); patchStatusErr != nil {
+						err = kerror.NewAggregate([]error{err, patchStatusErr})
+						err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
 						return ctrl.Result{RequeueAfter: requeueTime}, err
 					}
-					return ctrl.Result{RequeueAfter: 10 * time.Second}, nil
+					return ctrl.Result{RequeueAfter: 10 * time.Second}, err
 				} else {
 					r.Log.Error(err, "Error deleting prefix in the ipam", ipcidrCR.Spec.Cidr, ipcidrCR.Name)
 					return ctrl.Result{RequeueAfter: requeueTime}, err
@@ -335,15 +348,19 @@ func (r *IPCidrReconciler) initRegisteredCidrs(ctx context.Context) error {
 		return err
 	}
 
-	for _, IPCidr := range IPCidrList.Items {
-		if IPCidr.Status.Registered {
-			_, err := r.Ipamer.NewPrefix(ctx, IPCidr.Spec.Cidr)
-			if err != nil {
-				r.Log.Error(err, "Error when requesting cidr", IPCidr.Name, IPCidr.Spec.Cidr)
-				return err
+	if len(IPCidrList.Items) > 0 {
+		for _, IPCidr := range IPCidrList.Items {
+			if IPCidr.Status.Registered {
+				_, err := r.Ipamer.NewPrefix(ctx, IPCidr.Spec.Cidr)
+				if err != nil {
+					r.Log.Error(err, "Error when requesting cidr", IPCidr.Name, IPCidr.Spec.Cidr)
+					return err
+				}
 			}
 		}
+		r.Log.Info("All CIDRs was successfully initialized in the IPAM")
+		return nil
+	} else {
+		return nil
 	}
-	r.Log.Info("All CIDRs was successfully initialized in the IPAM")
-	return nil
 }

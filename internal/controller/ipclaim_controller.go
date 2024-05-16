@@ -388,7 +388,6 @@ func (r *IPClaimReconciler) getParentCidr(ctx context.Context, cr *ipamv1alpha1.
 				err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
 				return nil, err
 			}
-			return nil, nil
 		}
 		return nil, err
 	}
@@ -402,22 +401,26 @@ func (r *IPClaimReconciler) initRegisteredClaims(ctx context.Context) error {
 		return err
 	}
 
-	for _, IPClaim := range IPClaimList.Items {
-		if IPClaim.Status.Registered {
-			// Check the type of the claim
-			if IPClaim.Spec.Type == "IP" {
-				_, err := r.Ipamer.AcquireSpecificIP(ctx, IPClaim.Status.ParentCidr, IPClaim.Status.Claim)
-				if err != nil {
-					return err
-				}
-			} else {
-				_, err := r.Ipamer.AcquireSpecificChildPrefix(ctx, IPClaim.Status.ParentCidr, IPClaim.Status.Claim)
-				if err != nil {
-					return err
+	if len(IPClaimList.Items) > 0 {
+		for _, IPClaim := range IPClaimList.Items {
+			if IPClaim.Status.Registered {
+				// Check the type of the claim
+				if IPClaim.Spec.Type == "IP" {
+					_, err := r.Ipamer.AcquireSpecificIP(ctx, IPClaim.Status.ParentCidr, IPClaim.Status.Claim)
+					if err != nil {
+						return err
+					}
+				} else {
+					_, err := r.Ipamer.AcquireSpecificChildPrefix(ctx, IPClaim.Status.ParentCidr, IPClaim.Status.Claim)
+					if err != nil {
+						return err
+					}
 				}
 			}
 		}
+		r.Log.Info("All Claims was successfully initialized in the IPAM")
+		return nil
+	} else {
+		return nil
 	}
-	r.Log.Info("All Claims was successfully initialized in the IPAM")
-	return nil
 }
