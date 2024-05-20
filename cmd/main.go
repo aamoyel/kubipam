@@ -114,10 +114,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "IPClaim")
 		os.Exit(1)
 	}
-	// if err = (&ipamv1alpha1.IPClaim{}).SetupWebhookWithManager(mgr); err != nil {
-	// 	setupLog.Error(err, "unable to create webhook", "webhook", "IPClaim")
-	// 	os.Exit(1)
-	// }
+	if err = (&ipamv1alpha1.IPClaim{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "IPClaim")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
