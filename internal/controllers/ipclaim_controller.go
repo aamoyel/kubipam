@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controller
+package controllers
 
 import (
 	"context"
@@ -68,7 +68,7 @@ func (r *IPClaimReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	if !r.Initialized {
 		err := r.initRegisteredClaims(ctx)
 		if err != nil {
-			return ctrl.Result{}, err
+			return ctrl.Result{Requeue: true}, err
 		}
 		r.Initialized = true
 	}
@@ -296,6 +296,11 @@ func (r *IPClaimReconciler) getChildCidr(ctx context.Context, cr *ipamv1alpha1.I
 			return err
 		}
 
+		// check if the parent cidr is registered in the ipam
+		if err = r.checkParentCidr(ctx, cr, cidrCr.Spec.Cidr); err != nil {
+			return err
+		}
+
 		claim, err = r.Ipamer.AcquireSpecificChildPrefix(ctx, cidrCr.Spec.Cidr, cr.Spec.SpecificChildCidr)
 		if claim == nil {
 			err = fmt.Errorf("%w", err)
@@ -320,20 +325,36 @@ func (r *IPClaimReconciler) getChildCidr(ctx context.Context, cr *ipamv1alpha1.I
 			return err
 		}
 
-		for _, cidr := range cidrList.Items {
-			claim, err = r.Ipamer.AcquireChildPrefix(ctx, cidr.Spec.Cidr, cr.Spec.CidrPrefixLength)
-			if err == nil {
-				cidrCr = &cidr
-				break
-			} else {
-				err = fmt.Errorf("no matching cidr for your prefix length")
-				setIPClaimErrorStatus(cr, err)
-				if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
-					err = kerror.NewAggregate([]error{err, patchStatusErr})
-					err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+		if len(cidrList.Items) == 0 {
+			err = fmt.Errorf("no available parent cidr")
+			setIPClaimErrorStatus(cr, err)
+			if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
+				err = kerror.NewAggregate([]error{err, patchStatusErr})
+				err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+				return err
+			}
+			return err
+		} else {
+			for _, cidr := range cidrList.Items {
+				claim, err = r.Ipamer.AcquireChildPrefix(ctx, cidr.Spec.Cidr, cr.Spec.CidrPrefixLength)
+				if err == nil {
+					cidrCr = &cidr
+
+					// check if the parent cidr is registered in the ipam
+					if err = r.checkParentCidr(ctx, cr, cidrCr.Spec.Cidr); err != nil {
+						return err
+					}
+					break
+				} else {
+					err = fmt.Errorf("no matching cidr for your prefix length")
+					setIPClaimErrorStatus(cr, err)
+					if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
+						err = kerror.NewAggregate([]error{err, patchStatusErr})
+						err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+						return err
+					}
 					return err
 				}
-				return nil
 			}
 		}
 	}
@@ -411,6 +432,10 @@ func (r *IPClaimReconciler) initRegisteredClaims(ctx context.Context) error {
 						return err
 					}
 				} else {
+					// check if the parent cidr is registered in the ipam
+					if err := r.checkParentCidr(ctx, &IPClaim, IPClaim.Status.ParentCidr); err != nil {
+						return err
+					}
 					_, err := r.Ipamer.AcquireSpecificChildPrefix(ctx, IPClaim.Status.ParentCidr, IPClaim.Status.Claim)
 					if err != nil {
 						return err
@@ -423,4 +448,19 @@ func (r *IPClaimReconciler) initRegisteredClaims(ctx context.Context) error {
 	} else {
 		return nil
 	}
+}
+
+// checkParentCidr return an error when the parent cidr is not registered in the ipam.
+func (r *IPClaimReconciler) checkParentCidr(ctx context.Context, claimCr *ipamv1alpha1.IPClaim, parentCidr string) error {
+	_, err := r.Ipamer.PrefixFrom(ctx, parentCidr)
+	if err != nil {
+		err = fmt.Errorf("unable to find parent cidr in the ipam, err: %w", err)
+		setIPClaimErrorStatus(claimCr, err)
+		if patchStatusErr := r.patchIPClaimStatus(ctx, claimCr); patchStatusErr != nil {
+			err = kerror.NewAggregate([]error{err, patchStatusErr})
+			err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+		}
+		return err
+	}
+	return nil
 }

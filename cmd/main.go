@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	ipamv1alpha1 "github.com/aamoyel/kubipam/api/v1alpha1"
-	"github.com/aamoyel/kubipam/internal/controller"
+	controllers "github.com/aamoyel/kubipam/internal/controllers"
 
 	goipam "github.com/metal-stack/go-ipam"
 	//+kubebuilder:scaffold:imports
@@ -96,7 +96,7 @@ func main() {
 	// Create the ipam
 	ipamer := goipam.New(context.Background())
 
-	if err = (&controller.IPCidrReconciler{
+	if err = (&controllers.IPCidrReconciler{
 		Client:      mgr.GetClient(),
 		Scheme:      mgr.GetScheme(),
 		Ipamer:      ipamer,
@@ -105,7 +105,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "IPCidr")
 		os.Exit(1)
 	}
-	if err = (&controller.IPClaimReconciler{
+	if err = (&controllers.IPClaimReconciler{
 		Client:      mgr.GetClient(),
 		Scheme:      mgr.GetScheme(),
 		Ipamer:      ipamer,
@@ -114,10 +114,10 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "IPClaim")
 		os.Exit(1)
 	}
-	if err = (&ipamv1alpha1.IPClaim{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "IPClaim")
-		os.Exit(1)
-	}
+	// if err = (&ipamv1alpha1.IPClaim{}).SetupWebhookWithManager(mgr); err != nil {
+	// 	setupLog.Error(err, "unable to create webhook", "webhook", "IPClaim")
+	// 	os.Exit(1)
+	// }
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
