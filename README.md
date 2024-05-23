@@ -8,7 +8,7 @@ It works with 2 custom resources:
 - IPClaim
 
 IPCidr allows you to create a specific CIDR in the IPAM (IPv4 and IPv6).
-IPClaim is used to allocate/claim specific or non specific IPs and child CIDRs in the IPAM.
+IPClaim is used to allocate/claim specific or non-specific IPs and child CIDRs in the IPAM.
 
 ## Getting Started
 
@@ -74,7 +74,7 @@ spec:
   specificChildCidr: 172.16.1.0/24
 ```
 
-### Non specific
+### Non-specific
 
 #### IP
 

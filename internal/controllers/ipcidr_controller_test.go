@@ -12,18 +12,19 @@ import (
 	ipamv1alpha1 "github.com/aamoyel/kubipam/api/v1alpha1"
 )
 
+const (
+	timeout       = time.Second * 4
+	interval      = time.Second * 1
+	validCidrName = "test-cidr"
+)
+
 var _ = Describe("IPCidr controller", func() {
 
-	const (
-		timeout       = time.Second * 10
-		interval      = time.Millisecond * 250
-		validCidrName = "test-cidr"
-	)
 	Context("When create IPCidr", func() {
 		It("Should change 'registered' field in status and create the cidr in the ipam", func() {
 			ipCidrLookupKey := types.NamespacedName{Name: validCidrName}
 			createdIpCidr := &ipamv1alpha1.IPCidr{}
-			
+
 			By("Creating a new IPCidr")
 			ctx := context.Background()
 			ipcidr := getIpCidr(validCidrName, "192.168.0.0/16")
@@ -47,12 +48,12 @@ var _ = Describe("IPCidr controller", func() {
 			By("Creating a new IPCidr with bad prefix")
 			ipCidrName := "bad-prefix"
 			ctx := context.Background()
-			ipcidr := getIpCidr(ipCidrName, "172.16.0.0/33")
+			ipcidr := getIpCidr(ipCidrName, "10.10.10.0/33")
 			Expect(k8sClient.Create(ctx, ipcidr)).Should(Succeed())
-			ipCidrLookupKey := types.NamespacedName{Name: ipCidrName}
-			createdIpCidr := &ipamv1alpha1.IPCidr{}
 
 			By("Checking if the 'registered' status field is set to 'false' for the IPCidr that has a bad prefix")
+			ipCidrLookupKey := types.NamespacedName{Name: ipCidrName}
+			createdIpCidr := &ipamv1alpha1.IPCidr{}
 			Eventually(func() (bool, error) {
 				err := k8sClient.Get(ctx, ipCidrLookupKey, createdIpCidr)
 				if err != nil {
@@ -65,10 +66,10 @@ var _ = Describe("IPCidr controller", func() {
 			ipCidrName = "overlap-cidr"
 			ipcidr = getIpCidr(ipCidrName, "192.168.1.0/24")
 			Expect(k8sClient.Create(ctx, ipcidr)).Should(Succeed())
-			ipCidrLookupKey = types.NamespacedName{Name: ipCidrName}
-			createdIpCidr = &ipamv1alpha1.IPCidr{}
 
 			By("Checking if the 'registered' status field is set to 'false' for the IPCidr that overlap an existing registered cidr")
+			ipCidrLookupKey = types.NamespacedName{Name: ipCidrName}
+			createdIpCidr = &ipamv1alpha1.IPCidr{}
 			Eventually(func() (bool, error) {
 				err := k8sClient.Get(ctx, ipCidrLookupKey, createdIpCidr)
 				if err != nil {
