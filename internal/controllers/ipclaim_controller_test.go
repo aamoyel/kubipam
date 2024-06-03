@@ -21,20 +21,20 @@ var _ = Describe("IPClaim controller", func() {
 			ipcidr := getIpCidr(ipClaimCidr, "172.16.0.0/16")
 			Expect(k8sClient.Create(ctx, ipcidr)).Should(Succeed())
 
-			By("Creating a new IPClaim with bad prefix")
+			By("Creating a new IPClaim to claim an IP addr")
 			ipClaimName := "test-ip"
 			ipclaim := getIPClaim("IP", false, ipClaimName, ipClaimCidr)
 			Expect(k8sClient.Create(ctx, ipclaim)).Should(Succeed())
 
 			By("Checking if the 'registered' status field is set to 'true'")
 			ipClaimLookupKey := types.NamespacedName{Name: ipClaimName}
-			claimedIP := &ipamv1alpha1.IPClaim{}
+			ipClaimCR := &ipamv1alpha1.IPClaim{}
 			Eventually(func() (bool, error) {
-				err := k8sClient.Get(ctx, ipClaimLookupKey, claimedIP)
+				err := k8sClient.Get(ctx, ipClaimLookupKey, ipClaimCR)
 				if err != nil {
 					return false, err
 				}
-				return claimedIP.Status.Registered, nil
+				return ipClaimCR.Status.Registered, nil
 			}, timeout, interval).Should(Equal(true))
 		})
 	})

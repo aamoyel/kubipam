@@ -61,6 +61,8 @@ var _ = Describe("IPCidr controller", func() {
 				}
 				return createdIpCidr.Status.Registered, nil
 			}, timeout, interval).Should(Equal(false))
+			By("Deleting the bad cidr")
+			Expect(k8sClient.Delete(ctx, createdIpCidr)).Should(Succeed())
 
 			By("Creating a new IPCidr that overlap a created one")
 			ipCidrName = "overlap-cidr"
