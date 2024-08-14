@@ -1,5 +1,5 @@
 /*
-Copyright 2024 AlanAmoyel.
+Copyright 2024.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ limitations under the License.
 
 // Package v1alpha1 contains API Schema definitions for the ipam v1alpha1 API group
 // +kubebuilder:object:generate=true
-// +groupName=ipam.amoyel.fr
+// +groupName=ipam.didactiklabs.io
 package v1alpha1
 
 import (
@@ -26,7 +26,7 @@ import (
 
 var (
 	// GroupVersion is group version used to register these objects
-	GroupVersion = schema.GroupVersion{Group: "ipam.amoyel.fr", Version: "v1alpha1"}
+	GroupVersion = schema.GroupVersion{Group: "ipam.didactiklabs.io", Version: "v1alpha1"}
 
 	// SchemeBuilder is used to add go types to the GroupVersionKind scheme
 	SchemeBuilder = &scheme.Builder{GroupVersion: GroupVersion}

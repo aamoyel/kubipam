@@ -93,7 +93,8 @@ spec:
 
 #### CIDR
 
-When you claim a child CIDR, you must set the 'length' field but you do not set the 'ipCidrRef' field and the name of a IPCidr resource. The controller will claim a child cidr in a parent cidr that has available addresses.
+When you claim a child CIDR, you must set the 'length'.
+You can set the 'ipCidrRef' field and the name of a IPCidr resource if you want to claim the child CIDR from a selected parent, if not set, the controller will claim a child cidr in a parent cidr that has available addresses.
 Here you can find the example:
 
 ```yaml
@@ -105,6 +106,18 @@ spec:
   type: CIDR
   cidrPrefixLength: 24
 ```
+or (specific parent)
+```yaml
+apiVersion: ipam.amoyel.fr/v1alpha1
+kind: IPClaim
+metadata:
+  name: my-cidr
+spec:
+  type: CIDR
+  cidrPrefixLength: 24
+  ipCidrRef:
+    name: mycidr
+  ```
 
 ## Uninstall
 

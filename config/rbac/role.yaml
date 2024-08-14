@@ -5,7 +5,7 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - ipam.amoyel.fr
+  - ipam.didactiklabs.io
   resources:
   - ipcidrs
   verbs:
@@ -17,13 +17,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ipam.amoyel.fr
+  - ipam.didactiklabs.io
   resources:
   - ipcidrs/finalizers
   verbs:
   - update
 - apiGroups:
-  - ipam.amoyel.fr
+  - ipam.didactiklabs.io
   resources:
   - ipcidrs/status
   verbs:
@@ -31,7 +31,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - ipam.amoyel.fr
+  - ipam.didactiklabs.io
   resources:
   - ipclaims
   verbs:
@@ -43,13 +43,13 @@ rules:
   - update
   - watch
 - apiGroups:
-  - ipam.amoyel.fr
+  - ipam.didactiklabs.io
   resources:
   - ipclaims/finalizers
   verbs:
   - update
 - apiGroups:
-  - ipam.amoyel.fr
+  - ipam.didactiklabs.io
   resources:
   - ipclaims/status
   verbs:

@@ -15,7 +15,7 @@ webhooks:
   name: mipclaim.kb.io
   rules:
   - apiGroups:
-    - ipam.amoyel.fr
+    - ipam.didactiklabs.io
     apiVersions:
     - v1alpha1
     operations:
@@ -41,7 +41,7 @@ webhooks:
   name: vipclaim.kb.io
   rules:
   - apiGroups:
-    - ipam.amoyel.fr
+    - ipam.didactiklabs.io
     apiVersions:
     - v1alpha1
     operations:

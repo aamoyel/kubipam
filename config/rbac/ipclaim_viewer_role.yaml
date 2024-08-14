@@ -3,16 +3,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
   labels:
-    app.kubernetes.io/name: clusterrole
-    app.kubernetes.io/instance: ipclaim-viewer-role
-    app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: kubipam
-    app.kubernetes.io/part-of: kubipam
+    app.kubernetes.io/name: kubipam
     app.kubernetes.io/managed-by: kustomize
   name: ipclaim-viewer-role
 rules:
 - apiGroups:
-  - ipam.amoyel.fr
+  - ipam.didactiklabs.io
   resources:
   - ipclaims
   verbs:
@@ -20,7 +16,7 @@ rules:
   - list
   - watch
 - apiGroups:
-  - ipam.amoyel.fr
+  - ipam.didactiklabs.io
   resources:
   - ipclaims/status
   verbs:

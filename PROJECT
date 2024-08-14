@@ -2,7 +2,7 @@
 # This file is used to track the info used to scaffold your project
 # and allow the plugins properly work.
 # More info: https://book.kubebuilder.io/reference/project-config.html
-domain: amoyel.fr
+domain: didactiklabs.io
 layout:
 - go.kubebuilder.io/v4
 projectName: kubipam
@@ -10,18 +10,16 @@ repo: github.com/aamoyel/kubipam
 resources:
 - api:
     crdVersion: v1
-    namespaced: true
   controller: true
-  domain: amoyel.fr
+  domain: didactiklabs.io
   group: ipam
   kind: IPCidr
   path: github.com/aamoyel/kubipam/api/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
-    namespaced: true
   controller: true
-  domain: amoyel.fr
+  domain: didactiklabs.io
   group: ipam
   kind: IPClaim
   path: github.com/aamoyel/kubipam/api/v1alpha1

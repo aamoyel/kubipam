@@ -1,5 +1,5 @@
 /*
-Copyright 2024 AlanAmoyel.
+Copyright 2024.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,9 +51,9 @@ type IPClaimReconciler struct {
 	Initialized bool
 }
 
-//+kubebuilder:rbac:groups=ipam.amoyel.fr,resources=ipclaims,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=ipam.amoyel.fr,resources=ipclaims/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=ipam.amoyel.fr,resources=ipclaims/finalizers,verbs=update
+//+kubebuilder:rbac:groups=ipam.didactiklabs.io,resources=ipclaims,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=ipam.didactiklabs.io,resources=ipclaims/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=ipam.didactiklabs.io,resources=ipclaims/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -319,41 +319,60 @@ func (r *IPClaimReconciler) getChildCidr(ctx context.Context, cr *ipamv1alpha1.I
 			return err
 		}
 	} else if cr.Spec.SpecificChildCidr == "" {
-		// find available parent cidr for this prefix length
-		cidrList := &ipamv1alpha1.IPCidrList{}
-		if err := r.List(ctx, cidrList); err != nil {
-			return err
-		}
-
-		if len(cidrList.Items) == 0 {
-			err = fmt.Errorf("no available parent cidr")
-			setIPClaimErrorStatus(cr, err)
-			if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
-				err = kerror.NewAggregate([]error{err, patchStatusErr})
-				err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+		// Check if we need to use a specific parent CIDR
+		if cr.Spec.IPCidrRef.Name != "" {
+			// Get parent cidr
+			cidrCR, err := r.getParentCidr(ctx, cr)
+			if err != nil {
 				return err
 			}
-			return err
-		} else {
-			for _, cidr := range cidrList.Items {
-				claim, err = r.Ipamer.AcquireChildPrefix(ctx, cidr.Spec.Cidr, cr.Spec.CidrPrefixLength)
-				if err == nil {
-					cidrCr = &cidr
-
-					// check if the parent cidr is registered in the ipam
-					if err = r.checkParentCidr(ctx, cr, cidrCr.Spec.Cidr); err != nil {
-						return err
-					}
-					break
-				} else {
-					err = fmt.Errorf("no matching cidr for your prefix length")
-					setIPClaimErrorStatus(cr, err)
-					if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
-						err = kerror.NewAggregate([]error{err, patchStatusErr})
-						err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
-						return err
-					}
+			if !cidrCR.Status.Registered {
+				err := fmt.Errorf("the cidr resource in the IPCidrRefSpec for the %s claim is not in a ready state", cr.Name)
+				setIPClaimErrorStatus(cr, err)
+				if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
+					err = kerror.NewAggregate([]error{err, patchStatusErr})
+					err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
 					return err
+				}
+				return nil
+			}
+		} else {
+			// find available parent cidr for this prefix length
+			cidrList := &ipamv1alpha1.IPCidrList{}
+			if err := r.List(ctx, cidrList); err != nil {
+				return err
+			}
+
+			if len(cidrList.Items) == 0 {
+				err = fmt.Errorf("no available parent cidr")
+				setIPClaimErrorStatus(cr, err)
+				if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
+					err = kerror.NewAggregate([]error{err, patchStatusErr})
+					err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+					return err
+				}
+				return err
+			} else {
+				for _, cidr := range cidrList.Items {
+					claim, err = r.Ipamer.AcquireChildPrefix(ctx, cidr.Spec.Cidr, cr.Spec.CidrPrefixLength)
+					if err == nil {
+						cidrCr = &cidr
+
+						// check if the parent cidr is registered in the ipam
+						if err = r.checkParentCidr(ctx, cr, cidrCr.Spec.Cidr); err != nil {
+							return err
+						}
+						break
+					} else {
+						err = fmt.Errorf("no matching cidr for your prefix length")
+						setIPClaimErrorStatus(cr, err)
+						if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
+							err = kerror.NewAggregate([]error{err, patchStatusErr})
+							err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+							return err
+						}
+						return err
+					}
 				}
 			}
 		}

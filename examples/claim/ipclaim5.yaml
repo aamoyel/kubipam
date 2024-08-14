@@ -1,5 +1,5 @@
 ---
-apiVersion: ipam.amoyel.fr/v1alpha1
+apiVersion: ipam.didactiklabs.io/v1alpha1
 kind: IPClaim
 metadata:
   name: test5
