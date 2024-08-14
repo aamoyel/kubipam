@@ -1,5 +1,5 @@
 /*
-Copyright 2024 AlanAmoyel.
+Copyright 2024.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -51,9 +51,9 @@ type IPCidrReconciler struct {
 	Initialized bool
 }
 
-//+kubebuilder:rbac:groups=ipam.amoyel.fr,resources=ipcidrs,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=ipam.amoyel.fr,resources=ipcidrs/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=ipam.amoyel.fr,resources=ipcidrs/finalizers,verbs=update
+//+kubebuilder:rbac:groups=ipam.didactiklabs.io,resources=ipcidrs,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=ipam.didactiklabs.io,resources=ipcidrs/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=ipam.didactiklabs.io,resources=ipcidrs/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
