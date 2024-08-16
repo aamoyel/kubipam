@@ -29,7 +29,7 @@ kubectl apply -f deploy/bundle.yaml
 Example definition to create a CIDR in the IPAM:
 
 ```yaml
-apiVersion: ipam.amoyel.fr/v1alpha1
+apiVersion: ipam.didactiklabs.io/v1alpha1
 kind: IPCidr
 metadata:
   name: test
@@ -46,7 +46,7 @@ it works as well in IPv6
 Here you can find an example to claim a specific IP address:
 
 ```yaml
-apiVersion: ipam.amoyel.fr/v1alpha1
+apiVersion: ipam.didactiklabs.io/v1alpha1
 kind: IPClaim
 metadata:
   name: my-specific-ip
@@ -63,7 +63,7 @@ spec:
 Here you can find an example to claim a specific child CIDR:
 
 ```yaml
-apiVersion: ipam.amoyel.fr/v1alpha1
+apiVersion: ipam.didactiklabs.io/v1alpha1
 kind: IPClaim
 metadata:
   name: my-specific-childcidr
@@ -81,7 +81,7 @@ spec:
 Here you can find an example to claim the next free IP address:
 
 ```yaml
-apiVersion: ipam.amoyel.fr/v1alpha1
+apiVersion: ipam.didactiklabs.io/v1alpha1
 kind: IPClaim
 metadata:
   name: my-ip
@@ -98,7 +98,7 @@ You can set the 'ipCidrRef' field and the name of a IPCidr resource if you want 
 Here you can find the example:
 
 ```yaml
-apiVersion: ipam.amoyel.fr/v1alpha1
+apiVersion: ipam.didactiklabs.io/v1alpha1
 kind: IPClaim
 metadata:
   name: my-cidr
@@ -108,7 +108,7 @@ spec:
 ```
 or (specific parent)
 ```yaml
-apiVersion: ipam.amoyel.fr/v1alpha1
+apiVersion: ipam.didactiklabs.io/v1alpha1
 kind: IPClaim
 metadata:
   name: my-cidr
