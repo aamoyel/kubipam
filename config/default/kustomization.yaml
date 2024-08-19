@@ -141,4 +141,4 @@ kind: Kustomization
 images:
 - name: aamoyel/kubipam
   newName: gcr.io/aamoyel/kubipam
-  newTag: v0.1.1
+  newTag: v0.1.2
