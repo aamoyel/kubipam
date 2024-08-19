@@ -215,10 +215,7 @@ func IPClaimProgressing(o *ipamv1alpha1.IPClaim) {
 	})
 }
 
-func (r *IPClaimReconciler) patchIPClaimStatus(
-	ctx context.Context,
-	ipClaim *ipamv1alpha1.IPClaim,
-) error {
+func (r *IPClaimReconciler) patchIPClaimStatus(ctx context.Context, ipClaim *ipamv1alpha1.IPClaim) error {
 	key := client.ObjectKeyFromObject(ipClaim)
 	latest := &ipamv1alpha1.IPClaim{}
 	if err := r.Client.Get(ctx, key, latest); err != nil {
@@ -279,11 +276,7 @@ func (r *IPClaimReconciler) reconcileIPClaim(ctx context.Context, cr *ipamv1alph
 	return nil
 }
 
-func (r *IPClaimReconciler) getIpAddr(
-	ctx context.Context,
-	cr *ipamv1alpha1.IPClaim,
-	parentCidr string,
-) error {
+func (r *IPClaimReconciler) getIpAddr(ctx context.Context, cr *ipamv1alpha1.IPClaim, parentCidr string) error {
 	claim, err := r.Ipamer.AcquireSpecificIP(ctx, parentCidr, cr.Spec.SpecificIPAddress)
 	if claim == nil {
 		err = fmt.Errorf("%w", err)
@@ -307,10 +300,7 @@ func (r *IPClaimReconciler) getIpAddr(
 	return nil
 }
 
-func (r *IPClaimReconciler) getChildCidr(
-	ctx context.Context,
-	cr *ipamv1alpha1.IPClaim,
-) (err error) {
+func (r *IPClaimReconciler) getChildCidr(ctx context.Context, cr *ipamv1alpha1.IPClaim) (err error) {
 	var (
 		claim  *goipam.Prefix
 		cidrCr *ipamv1alpha1.IPCidr
@@ -348,15 +338,15 @@ func (r *IPClaimReconciler) getChildCidr(
 			}
 			return err
 		}
-	} else if cr.Spec.SpecificChildCidr == "" {
+	} else {
 		// Check if we need to use a specific parent CIDR
-		if cr.Spec.IPCidrRef.Name != "" {
+		if cr.Spec.IPCidrRef != nil {
 			// Get parent cidr
-			cidrCR, err := r.getParentCidr(ctx, cr)
+			cidrCr, err = r.getParentCidr(ctx, cr)
 			if err != nil {
 				return err
 			}
-			if !cidrCR.Status.Registered {
+			if !cidrCr.Status.Registered {
 				err := fmt.Errorf("the cidr resource in the IPCidrRefSpec for the %s claim is not in a ready state", cr.Name)
 				setIPClaimErrorStatus(cr, err)
 				if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
@@ -365,6 +355,17 @@ func (r *IPClaimReconciler) getChildCidr(
 					return err
 				}
 				return nil
+			}
+			claim, err = r.Ipamer.AcquireChildPrefix(ctx, cidrCr.Spec.Cidr, cr.Spec.CidrPrefixLength)
+			if err != nil {
+				err = fmt.Errorf("Unable to get a child cidr for your prefix lengh in the '"+cr.Spec.IPCidrRef.Name+"' , err: %w", err)
+				setIPClaimErrorStatus(cr, err)
+				if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
+					err = kerror.NewAggregate([]error{err, patchStatusErr})
+					err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+					return err
+				}
+				return err
 			}
 		} else {
 			// find available parent cidr for this prefix length
@@ -425,10 +426,7 @@ func setIPClaimErrorStatus(cr *ipamv1alpha1.IPClaim, err error) {
 }
 
 // ipClaimReconcileRequests returns a list of reconcile.Request based on the ipclaim resource.
-func ipClaimReconcileRequests(
-	ctx context.Context,
-	mgr manager.Manager,
-) ([]reconcile.Request, error) {
+func ipClaimReconcileRequests(ctx context.Context, mgr manager.Manager) ([]reconcile.Request, error) {
 	IPClaimList := &ipamv1alpha1.IPClaimList{}
 	err := mgr.GetClient().List(ctx, IPClaimList)
 	if err != nil {
@@ -446,10 +444,7 @@ func ipClaimReconcileRequests(
 	return requests, nil
 }
 
-func (r *IPClaimReconciler) getParentCidr(
-	ctx context.Context,
-	cr *ipamv1alpha1.IPClaim,
-) (*ipamv1alpha1.IPCidr, error) {
+func (r *IPClaimReconciler) getParentCidr(ctx context.Context, cr *ipamv1alpha1.IPClaim) (*ipamv1alpha1.IPCidr, error) {
 	cidrCR := &ipamv1alpha1.IPCidr{}
 	cidrNamepacedName := types.NamespacedName{
 		Name: cr.Spec.IPCidrRef.Name,
@@ -514,11 +509,7 @@ func (r *IPClaimReconciler) initRegisteredClaims(ctx context.Context) error {
 }
 
 // checkParentCidr return an error when the parent cidr is not registered in the ipam.
-func (r *IPClaimReconciler) checkParentCidr(
-	ctx context.Context,
-	claimCr *ipamv1alpha1.IPClaim,
-	parentCidr string,
-) error {
+func (r *IPClaimReconciler) checkParentCidr(ctx context.Context, claimCr *ipamv1alpha1.IPClaim, parentCidr string) error {
 	_, err := r.Ipamer.PrefixFrom(ctx, parentCidr)
 	if err != nil {
 		err = fmt.Errorf("unable to find parent cidr in the ipam, err: %w", err)

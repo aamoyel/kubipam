@@ -645,7 +645,7 @@ spec:
         - --metrics-bind-address=0.0.0.0:8080
         command:
         - /manager
-        image: gcr.io/aamoyel/kubipam:v0.1.2
+        image: gcr.io/aamoyel/kubipam:v0.1.3
         livenessProbe:
           httpGet:
             path: /healthz

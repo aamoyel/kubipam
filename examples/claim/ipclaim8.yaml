@@ -1,0 +1,10 @@
+---
+apiVersion: ipam.didactiklabs.io/v1alpha1
+kind: IPClaim
+metadata:
+  name: test8
+spec:
+  type: CIDR
+  ipCidrRef:
+    name: test-v6
+  cidrPrefixLength: 108

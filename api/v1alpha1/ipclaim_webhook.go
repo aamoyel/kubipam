@@ -88,15 +88,19 @@ func (r *IPClaim) validateClaim() error {
 func (r *IPClaim) validateSpec() *field.Error {
 	// The field helpers from the kubernetes API machinery help us return nicely
 	// structured validation errors.
+
+	if r.Spec.IPCidrRef != nil {
+		if r.Spec.IPCidrRef.Name == "" {
+			return field.Forbidden(field.NewPath("spec").Child("ipCidrRef").Child("name"), "'ipCidrRef.name' must be set when using 'ipCidrRef'")
+		}
+	}
+
 	if r.Spec.Type == "IP" {
 		noRefmsg := field.Forbidden(
 			field.NewPath("spec").Child("ipCidrRef").Child("name"),
 			"the name of a valid IPCidr resource must be referenced when using 'type: IP'",
 		)
 		if r.Spec.IPCidrRef == nil {
-			return noRefmsg
-		}
-		if r.Spec.IPCidrRef.Name == "" {
 			return noRefmsg
 		}
 	}
@@ -108,9 +112,6 @@ func (r *IPClaim) validateSpec() *field.Error {
 		)
 		if r.Spec.SpecificChildCidr != "" {
 			if r.Spec.IPCidrRef == nil {
-				return noRefmsg
-			}
-			if r.Spec.IPCidrRef.Name == "" {
 				return noRefmsg
 			}
 		}
