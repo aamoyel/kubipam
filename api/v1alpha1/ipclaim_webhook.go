@@ -36,7 +36,7 @@ func (r *IPClaim) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-ipam-amoyel-fr-v1alpha1-ipclaim,mutating=true,failurePolicy=fail,sideEffects=None,groups=ipam.didactiklabs.io,resources=ipclaims,verbs=create;update,versions=v1alpha1,name=mipclaim.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-ipam-didactiklabs-io-v1alpha1-ipclaim,mutating=true,failurePolicy=fail,sideEffects=None,groups=ipam.didactiklabs.io,resources=ipclaims,verbs=create;update,versions=v1alpha1,name=mipclaim.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &IPClaim{}
 
@@ -46,7 +46,7 @@ func (r *IPClaim) Default() {
 }
 
 // TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-ipam-amoyel-fr-v1alpha1-ipclaim,mutating=false,failurePolicy=fail,sideEffects=None,groups=ipam.didactiklabs.io,resources=ipclaims,verbs=create;update,versions=v1alpha1,name=vipclaim.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-ipam-didactiklabs-io-v1alpha1-ipclaim,mutating=false,failurePolicy=fail,sideEffects=None,groups=ipam.didactiklabs.io,resources=ipclaims,verbs=create;update,versions=v1alpha1,name=vipclaim.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &IPClaim{}
 

@@ -10,7 +10,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-ipam-amoyel-fr-v1alpha1-ipclaim
+      path: /mutate-ipam-didactiklabs-io-v1alpha1-ipclaim
   failurePolicy: Fail
   name: mipclaim.kb.io
   rules:
@@ -36,7 +36,7 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /validate-ipam-amoyel-fr-v1alpha1-ipclaim
+      path: /validate-ipam-didactiklabs-io-v1alpha1-ipclaim
   failurePolicy: Fail
   name: vipclaim.kb.io
   rules:
