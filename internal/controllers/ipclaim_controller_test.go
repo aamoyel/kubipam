@@ -21,9 +21,8 @@ import (
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"k8s.io/apimachinery/pkg/types"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 
 	ipamv1alpha1 "github.com/aamoyel/kubipam/api/v1alpha1"
 )
@@ -57,7 +56,12 @@ var _ = Describe("IPClaim controller", func() {
 	})
 })
 
-func getIPClaim(claimType string, specific bool, name string, cidrName string) *ipamv1alpha1.IPClaim {
+func getIPClaim(
+	claimType string,
+	specific bool,
+	name string,
+	cidrName string,
+) *ipamv1alpha1.IPClaim {
 	claim := &ipamv1alpha1.IPClaim{}
 	if claimType == "IP" {
 		if !specific {
