@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-logr/logr"
+	goipam "github.com/metal-stack/go-ipam"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,9 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	ipamv1alpha1 "github.com/aamoyel/kubipam/api/v1alpha1"
-	"github.com/go-logr/logr"
-	goipam "github.com/metal-stack/go-ipam"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
 )
 
 // IPCidrReconciler reconciles a IPCidr object
@@ -83,7 +83,8 @@ func (r *IPCidrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Add finalizers
-	if ipcidrCR.ObjectMeta.DeletionTimestamp.IsZero() && !controllerutil.ContainsFinalizer(ipcidrCR, ipcidrFinalizer) {
+	if ipcidrCR.ObjectMeta.DeletionTimestamp.IsZero() &&
+		!controllerutil.ContainsFinalizer(ipcidrCR, ipcidrFinalizer) {
 		r.Log.Info("Adding finalizer to the object", "IPCidr", ipcidrCR.Name)
 		controllerutil.AddFinalizer(ipcidrCR, ipcidrFinalizer)
 		if err := r.Update(ctx, ipcidrCR); err != nil {
@@ -93,7 +94,10 @@ func (r *IPCidrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	// Change the status before start the cidr reconciliation
-	readyCondition := apimeta.FindStatusCondition(ipcidrCR.Status.Conditions, ipamv1alpha1.ConditionTypeReady)
+	readyCondition := apimeta.FindStatusCondition(
+		ipcidrCR.Status.Conditions,
+		ipamv1alpha1.ConditionTypeReady,
+	)
 	if readyCondition == nil || readyCondition.ObservedGeneration != ipcidrCR.GetGeneration() {
 		IPCidrProgressing(ipcidrCR)
 		if err := r.patchIPCidrStatus(ctx, ipcidrCR); err != nil {
@@ -118,7 +122,11 @@ func (r *IPCidrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 			cidrs := cidr.Usage().AcquiredPrefixes
 			// check if the cidr have child prefixes before removing it (the ipamer doesn't send error when parent cidr has child prefixes).
 			if cidrs > 0 {
-				err = fmt.Errorf("cidr '%s' has %v chid prefixes, delete is not possible", ipcidrCR.Name, cidrs)
+				err = fmt.Errorf(
+					"cidr '%s' has %v chid prefixes, delete is not possible",
+					ipcidrCR.Name,
+					cidrs,
+				)
 				setIPCidrDeletionStatus(ipcidrCR, err)
 				if patchStatusErr := r.patchIPCidrStatus(ctx, ipcidrCR); patchStatusErr != nil {
 					err = kerror.NewAggregate([]error{err, patchStatusErr})
@@ -136,7 +144,10 @@ func (r *IPCidrReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 					setIPCidrDeletionStatus(ipcidrCR, err)
 					if patchStatusErr := r.patchIPCidrStatus(ctx, ipcidrCR); patchStatusErr != nil {
 						err = kerror.NewAggregate([]error{err, patchStatusErr})
-						err = fmt.Errorf("unable to patch status after reconciliation failed: %w", err)
+						err = fmt.Errorf(
+							"unable to patch status after reconciliation failed: %w",
+							err,
+						)
 						return ctrl.Result{RequeueAfter: requeueTime}, err
 					}
 					return ctrl.Result{RequeueAfter: 10 * time.Second}, err
@@ -210,7 +221,10 @@ func IPCidrProgressing(o *ipamv1alpha1.IPCidr) {
 	})
 }
 
-func (r *IPCidrReconciler) patchIPCidrStatus(ctx context.Context, ipCidr *ipamv1alpha1.IPCidr) error {
+func (r *IPCidrReconciler) patchIPCidrStatus(
+	ctx context.Context,
+	ipCidr *ipamv1alpha1.IPCidr,
+) error {
 	key := client.ObjectKeyFromObject(ipCidr)
 	latest := &ipamv1alpha1.IPCidr{}
 	if err := r.Client.Get(ctx, key, latest); err != nil {
@@ -223,7 +237,7 @@ func (r *IPCidrReconciler) reconcileIPCidr(ctx context.Context, cr *ipamv1alpha1
 	// Check if the cidr is already registered
 	_, err := r.Ipamer.PrefixFrom(ctx, cr.Spec.Cidr)
 	if err != nil {
-		// Check overlaping
+		// Check overlapping
 		err := r.isCidrOverlapping(ctx, cr)
 		if err != nil {
 			return err
@@ -265,7 +279,7 @@ func (r *IPCidrReconciler) reconcileIPCidr(ctx context.Context, cr *ipamv1alpha1
 	apimeta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
 		Status:             metav1.ConditionTrue,
 		Reason:             ipamv1alpha1.ReconciliationSucceededReason,
-		Message:            "Reconciliation suceeded",
+		Message:            "Reconciliation succeeded",
 		Type:               ipamv1alpha1.ConditionTypeReady,
 		ObservedGeneration: cr.GetGeneration(),
 	})
@@ -323,7 +337,10 @@ func (r *IPCidrReconciler) isCidrOverlapping(ctx context.Context, cr *ipamv1alph
 }
 
 // ipCidrReconcileRequests returns a list of reconcile.Request based on the ipcidr resource.
-func ipCidrReconcileRequests(ctx context.Context, mgr manager.Manager) ([]reconcile.Request, error) {
+func ipCidrReconcileRequests(
+	ctx context.Context,
+	mgr manager.Manager,
+) ([]reconcile.Request, error) {
 	IPCidrList := &ipamv1alpha1.IPCidrList{}
 	err := mgr.GetClient().List(ctx, IPCidrList)
 	if err != nil {

@@ -20,6 +20,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/go-logr/logr"
+	goipam "github.com/metal-stack/go-ipam"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	apimeta "k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,10 +40,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	ipamv1alpha1 "github.com/aamoyel/kubipam/api/v1alpha1"
-	"github.com/go-logr/logr"
-	goipam "github.com/metal-stack/go-ipam"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	apimeta "k8s.io/apimachinery/pkg/api/meta"
 )
 
 // IPClaimReconciler reconciles a IPClaim object
@@ -83,7 +83,8 @@ func (r *IPClaimReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Add finalizers
-	if ipclaimCR.ObjectMeta.DeletionTimestamp.IsZero() && !controllerutil.ContainsFinalizer(ipclaimCR, ipclaimFinalizer) {
+	if ipclaimCR.ObjectMeta.DeletionTimestamp.IsZero() &&
+		!controllerutil.ContainsFinalizer(ipclaimCR, ipclaimFinalizer) {
 		r.Log.Info("Adding finalizer to the object", "IPClaim", ipclaimCR.Name)
 		controllerutil.AddFinalizer(ipclaimCR, ipclaimFinalizer)
 		if err := r.Update(ctx, ipclaimCR); err != nil {
@@ -93,7 +94,10 @@ func (r *IPClaimReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 	}
 
 	// Change the status before start the claim reconciliation
-	readyCondition := apimeta.FindStatusCondition(ipclaimCR.Status.Conditions, ipamv1alpha1.ConditionTypeReady)
+	readyCondition := apimeta.FindStatusCondition(
+		ipclaimCR.Status.Conditions,
+		ipamv1alpha1.ConditionTypeReady,
+	)
 	if readyCondition == nil || readyCondition.ObservedGeneration != ipclaimCR.GetGeneration() {
 		IPClaimProgressing(ipclaimCR)
 		if err := r.patchIPClaimStatus(ctx, ipclaimCR); err != nil {
@@ -107,9 +111,18 @@ func (r *IPClaimReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 		if ipclaimCR.Spec.Type == "IP" {
 			if ipclaimCR.Status.Registered {
 				// release ip from the ipam
-				err := r.Ipamer.ReleaseIPFromPrefix(ctx, ipclaimCR.Status.ParentCidr, ipclaimCR.Status.Claim)
+				err := r.Ipamer.ReleaseIPFromPrefix(
+					ctx,
+					ipclaimCR.Status.ParentCidr,
+					ipclaimCR.Status.Claim,
+				)
 				if err != nil {
-					r.Log.Error(err, "Error releasing the ip from the ipam", ipclaimCR.Status.Claim, ipclaimCR.Name)
+					r.Log.Error(
+						err,
+						"Error releasing the ip from the ipam",
+						ipclaimCR.Status.Claim,
+						ipclaimCR.Name,
+					)
 					return ctrl.Result{RequeueAfter: requeueTime}, err
 				}
 			}
@@ -202,7 +215,10 @@ func IPClaimProgressing(o *ipamv1alpha1.IPClaim) {
 	})
 }
 
-func (r *IPClaimReconciler) patchIPClaimStatus(ctx context.Context, ipClaim *ipamv1alpha1.IPClaim) error {
+func (r *IPClaimReconciler) patchIPClaimStatus(
+	ctx context.Context,
+	ipClaim *ipamv1alpha1.IPClaim,
+) error {
 	key := client.ObjectKeyFromObject(ipClaim)
 	latest := &ipamv1alpha1.IPClaim{}
 	if err := r.Client.Get(ctx, key, latest); err != nil {
@@ -221,7 +237,10 @@ func (r *IPClaimReconciler) reconcileIPClaim(ctx context.Context, cr *ipamv1alph
 				return err
 			}
 			if !cidrCR.Status.Registered {
-				err := fmt.Errorf("the cidr resource in the IPCidrRefSpec for the %s claim is not in a ready state", cr.Name)
+				err := fmt.Errorf(
+					"the cidr resource in the IPCidrRefSpec for the %s claim is not in a ready state",
+					cr.Name,
+				)
 				setIPClaimErrorStatus(cr, err)
 				if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
 					err = kerror.NewAggregate([]error{err, patchStatusErr})
@@ -248,7 +267,7 @@ func (r *IPClaimReconciler) reconcileIPClaim(ctx context.Context, cr *ipamv1alph
 	apimeta.SetStatusCondition(&cr.Status.Conditions, metav1.Condition{
 		Status:             metav1.ConditionTrue,
 		Reason:             ipamv1alpha1.ReconciliationSucceededReason,
-		Message:            "Reconciliation suceeded",
+		Message:            "Reconciliation succeeded",
 		Type:               ipamv1alpha1.ConditionTypeReady,
 		ObservedGeneration: cr.GetGeneration(),
 	})
@@ -260,7 +279,11 @@ func (r *IPClaimReconciler) reconcileIPClaim(ctx context.Context, cr *ipamv1alph
 	return nil
 }
 
-func (r *IPClaimReconciler) getIpAddr(ctx context.Context, cr *ipamv1alpha1.IPClaim, parentCidr string) error {
+func (r *IPClaimReconciler) getIpAddr(
+	ctx context.Context,
+	cr *ipamv1alpha1.IPClaim,
+	parentCidr string,
+) error {
 	claim, err := r.Ipamer.AcquireSpecificIP(ctx, parentCidr, cr.Spec.SpecificIPAddress)
 	if claim == nil {
 		err = fmt.Errorf("%w", err)
@@ -284,7 +307,10 @@ func (r *IPClaimReconciler) getIpAddr(ctx context.Context, cr *ipamv1alpha1.IPCl
 	return nil
 }
 
-func (r *IPClaimReconciler) getChildCidr(ctx context.Context, cr *ipamv1alpha1.IPClaim) (err error) {
+func (r *IPClaimReconciler) getChildCidr(
+	ctx context.Context,
+	cr *ipamv1alpha1.IPClaim,
+) (err error) {
 	var (
 		claim  *goipam.Prefix
 		cidrCr *ipamv1alpha1.IPCidr
@@ -301,7 +327,11 @@ func (r *IPClaimReconciler) getChildCidr(ctx context.Context, cr *ipamv1alpha1.I
 			return err
 		}
 
-		claim, err = r.Ipamer.AcquireSpecificChildPrefix(ctx, cidrCr.Spec.Cidr, cr.Spec.SpecificChildCidr)
+		claim, err = r.Ipamer.AcquireSpecificChildPrefix(
+			ctx,
+			cidrCr.Spec.Cidr,
+			cr.Spec.SpecificChildCidr,
+		)
 		if claim == nil {
 			err = fmt.Errorf("%w", err)
 			setIPClaimErrorStatus(cr, err)
@@ -395,7 +425,10 @@ func setIPClaimErrorStatus(cr *ipamv1alpha1.IPClaim, err error) {
 }
 
 // ipClaimReconcileRequests returns a list of reconcile.Request based on the ipclaim resource.
-func ipClaimReconcileRequests(ctx context.Context, mgr manager.Manager) ([]reconcile.Request, error) {
+func ipClaimReconcileRequests(
+	ctx context.Context,
+	mgr manager.Manager,
+) ([]reconcile.Request, error) {
 	IPClaimList := &ipamv1alpha1.IPClaimList{}
 	err := mgr.GetClient().List(ctx, IPClaimList)
 	if err != nil {
@@ -413,7 +446,10 @@ func ipClaimReconcileRequests(ctx context.Context, mgr manager.Manager) ([]recon
 	return requests, nil
 }
 
-func (r *IPClaimReconciler) getParentCidr(ctx context.Context, cr *ipamv1alpha1.IPClaim) (*ipamv1alpha1.IPCidr, error) {
+func (r *IPClaimReconciler) getParentCidr(
+	ctx context.Context,
+	cr *ipamv1alpha1.IPClaim,
+) (*ipamv1alpha1.IPCidr, error) {
 	cidrCR := &ipamv1alpha1.IPCidr{}
 	cidrNamepacedName := types.NamespacedName{
 		Name: cr.Spec.IPCidrRef.Name,
@@ -421,7 +457,11 @@ func (r *IPClaimReconciler) getParentCidr(ctx context.Context, cr *ipamv1alpha1.
 
 	if err := r.Get(ctx, cidrNamepacedName, cidrCR); err != nil { // check if resource is available and stored in err
 		if apierrors.IsNotFound(err) { // check for "not found error"
-			err = fmt.Errorf("unable to find or get cidr in IPCidrRefSpec for the %s claim: %w", cr.Name, err)
+			err = fmt.Errorf(
+				"unable to find or get cidr in IPCidrRefSpec for the %s claim: %w",
+				cr.Name,
+				err,
+			)
 			setIPClaimErrorStatus(cr, err)
 			if patchStatusErr := r.patchIPClaimStatus(ctx, cr); patchStatusErr != nil {
 				err = kerror.NewAggregate([]error{err, patchStatusErr})
@@ -446,7 +486,11 @@ func (r *IPClaimReconciler) initRegisteredClaims(ctx context.Context) error {
 			if IPClaim.Status.Registered {
 				// Check the type of the claim
 				if IPClaim.Spec.Type == "IP" {
-					_, err := r.Ipamer.AcquireSpecificIP(ctx, IPClaim.Status.ParentCidr, IPClaim.Status.Claim)
+					_, err := r.Ipamer.AcquireSpecificIP(
+						ctx,
+						IPClaim.Status.ParentCidr,
+						IPClaim.Status.Claim,
+					)
 					if err != nil {
 						return err
 					}
@@ -470,7 +514,11 @@ func (r *IPClaimReconciler) initRegisteredClaims(ctx context.Context) error {
 }
 
 // checkParentCidr return an error when the parent cidr is not registered in the ipam.
-func (r *IPClaimReconciler) checkParentCidr(ctx context.Context, claimCr *ipamv1alpha1.IPClaim, parentCidr string) error {
+func (r *IPClaimReconciler) checkParentCidr(
+	ctx context.Context,
+	claimCr *ipamv1alpha1.IPClaim,
+	parentCidr string,
+) error {
 	_, err := r.Ipamer.PrefixFrom(ctx, parentCidr)
 	if err != nil {
 		err = fmt.Errorf("unable to find parent cidr in the ipam, err: %w", err)

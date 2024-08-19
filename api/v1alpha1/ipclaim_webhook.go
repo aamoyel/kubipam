@@ -89,7 +89,10 @@ func (r *IPClaim) validateSpec() *field.Error {
 	// The field helpers from the kubernetes API machinery help us return nicely
 	// structured validation errors.
 	if r.Spec.Type == "IP" {
-		noRefmsg := field.Forbidden(field.NewPath("spec").Child("ipCidrRef").Child("name"), "the name of a valid IPCidr resource must be referenced when using 'type: IP'")
+		noRefmsg := field.Forbidden(
+			field.NewPath("spec").Child("ipCidrRef").Child("name"),
+			"the name of a valid IPCidr resource must be referenced when using 'type: IP'",
+		)
 		if r.Spec.IPCidrRef == nil {
 			return noRefmsg
 		}
@@ -99,7 +102,10 @@ func (r *IPClaim) validateSpec() *field.Error {
 	}
 
 	if r.Spec.Type == "CIDR" {
-		noRefmsg := field.Forbidden(field.NewPath("spec").Child("ipCidrRef").Child("name"), "the name of a valid IPCidr resource must be referenced when using 'specificChildCidr'")
+		noRefmsg := field.Forbidden(
+			field.NewPath("spec").Child("ipCidrRef").Child("name"),
+			"the name of a valid IPCidr resource must be referenced when using 'specificChildCidr'",
+		)
 		if r.Spec.SpecificChildCidr != "" {
 			if r.Spec.IPCidrRef == nil {
 				return noRefmsg
@@ -110,7 +116,10 @@ func (r *IPClaim) validateSpec() *field.Error {
 		}
 
 		if r.Spec.SpecificChildCidr == "" && r.Spec.CidrPrefixLength == 0 {
-			return field.Forbidden(field.NewPath("spec").Child("cidrPrefixLength"), "the prefix length must be set when using 'type: CIDR'")
+			return field.Forbidden(
+				field.NewPath("spec").Child("cidrPrefixLength"),
+				"the prefix length must be set when using 'type: CIDR'",
+			)
 		}
 	}
 	return nil

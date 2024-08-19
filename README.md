@@ -4,6 +4,7 @@
 
 Kubipam is a Kubernetes controller that manage network IPs and CIDRs for you.
 It works with 2 custom resources:
+
 - IPCidr
 - IPClaim
 
@@ -106,7 +107,9 @@ spec:
   type: CIDR
   cidrPrefixLength: 24
 ```
+
 or (specific parent)
+
 ```yaml
 apiVersion: ipam.didactiklabs.io/v1alpha1
 kind: IPClaim
@@ -117,7 +120,7 @@ spec:
   cidrPrefixLength: 24
   ipCidrRef:
     name: mycidr
-  ```
+```
 
 ## Uninstall
 
@@ -135,3 +138,23 @@ If you think you have found a bug please follow the instructions below.
 - Open a new issue.
 - Please, write a clear title and describe your bug in the description field.
 - Get the logs from the controller or resources status and paste it into your issue.
+
+## Build
+
+### Build with nix
+
+#### Build the binary
+
+Run:
+
+```bash
+nix-build -E 'with import <nixpkgs> {}; callPackage ./nix/binaries.nix {}'
+```
+
+#### Build the OCI
+
+Run:
+
+```bash
+nix-build -E 'with import <nixpkgs> {}; callPackage ./nix/oci.nix {}'
+```

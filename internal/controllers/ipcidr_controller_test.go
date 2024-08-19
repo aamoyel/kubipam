@@ -59,42 +59,49 @@ var _ = Describe("IPCidr Controller", func() {
 			Expect(err).ShouldNot(HaveOccurred())
 		})
 
-		It("Should not create the cidr in the ipam and set 'registered' field in status if the cidr is not correctly set of conform", func() {
-			By("Creating a new IPCidr with bad prefix")
-			ipCidrName := "bad-prefix"
-			ctx := context.Background()
-			ipcidr := getIpCidr(ipCidrName, "10.10.10.0/33")
-			Expect(k8sClient.Create(ctx, ipcidr)).Should(Succeed())
+		It(
+			"Should not create the cidr in the ipam and set 'registered' field in status if the cidr is not correctly set of conform",
+			func() {
+				By("Creating a new IPCidr with bad prefix")
+				ipCidrName := "bad-prefix"
+				ctx := context.Background()
+				ipcidr := getIpCidr(ipCidrName, "10.10.10.0/33")
+				Expect(k8sClient.Create(ctx, ipcidr)).Should(Succeed())
 
-			By("Checking if the 'registered' status field is set to 'false' for the IPCidr that has a bad prefix")
-			ipCidrLookupKey := types.NamespacedName{Name: ipCidrName}
-			createdIpCidr := &ipamv1alpha1.IPCidr{}
-			Eventually(func() (bool, error) {
-				err := k8sClient.Get(ctx, ipCidrLookupKey, createdIpCidr)
-				if err != nil {
-					return false, err
-				}
-				return createdIpCidr.Status.Registered, nil
-			}, timeout, interval).Should(Equal(false))
-			By("Deleting the bad cidr")
-			Expect(k8sClient.Delete(ctx, createdIpCidr)).Should(Succeed())
+				By(
+					"Checking if the 'registered' status field is set to 'false' for the IPCidr that has a bad prefix",
+				)
+				ipCidrLookupKey := types.NamespacedName{Name: ipCidrName}
+				createdIpCidr := &ipamv1alpha1.IPCidr{}
+				Eventually(func() (bool, error) {
+					err := k8sClient.Get(ctx, ipCidrLookupKey, createdIpCidr)
+					if err != nil {
+						return false, err
+					}
+					return createdIpCidr.Status.Registered, nil
+				}, timeout, interval).Should(Equal(false))
+				By("Deleting the bad cidr")
+				Expect(k8sClient.Delete(ctx, createdIpCidr)).Should(Succeed())
 
-			By("Creating a new IPCidr that overlap a created one")
-			ipCidrName = "overlap-cidr"
-			ipcidr = getIpCidr(ipCidrName, "192.168.1.0/24")
-			Expect(k8sClient.Create(ctx, ipcidr)).Should(Succeed())
+				By("Creating a new IPCidr that overlap a created one")
+				ipCidrName = "overlap-cidr"
+				ipcidr = getIpCidr(ipCidrName, "192.168.1.0/24")
+				Expect(k8sClient.Create(ctx, ipcidr)).Should(Succeed())
 
-			By("Checking if the 'registered' status field is set to 'false' for the IPCidr that overlap an existing registered cidr")
-			ipCidrLookupKey = types.NamespacedName{Name: ipCidrName}
-			createdIpCidr = &ipamv1alpha1.IPCidr{}
-			Eventually(func() (bool, error) {
-				err := k8sClient.Get(ctx, ipCidrLookupKey, createdIpCidr)
-				if err != nil {
-					return false, err
-				}
-				return createdIpCidr.Status.Registered, nil
-			}, timeout, interval).Should(Equal(false))
-		})
+				By(
+					"Checking if the 'registered' status field is set to 'false' for the IPCidr that overlap an existing registered cidr",
+				)
+				ipCidrLookupKey = types.NamespacedName{Name: ipCidrName}
+				createdIpCidr = &ipamv1alpha1.IPCidr{}
+				Eventually(func() (bool, error) {
+					err := k8sClient.Get(ctx, ipCidrLookupKey, createdIpCidr)
+					if err != nil {
+						return false, err
+					}
+					return createdIpCidr.Status.Registered, nil
+				}, timeout, interval).Should(Equal(false))
+			},
+		)
 	})
 	Context("When delete IPCidr", func() {
 		It("Should remove the registered cidr from the ipam", func() {
