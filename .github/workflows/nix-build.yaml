@@ -1,6 +1,7 @@
 name: 'Build'
 on:
   pull_request:
+    branches: [main]
   push:
 jobs:
   tests:
@@ -11,3 +12,4 @@ jobs:
         with:
           nix_path: nixpkgs=channel:nixos-unstable
       - run: nix-build -E 'with import <nixpkgs> {}; callPackage ./nix/binaries.nix {}'
+      - run: nix-build -E 'with import <nixpkgs> {}; callPackage ./nix/oci.nix {}'
