@@ -2,7 +2,7 @@
 let inherit (lib) cleanSource cleanSourceWith;
 in pkgs.buildGoModule {
   pname = "kubeipam";
-  version = "0.1.2";
+  version = "nix";
 
   src = cleanSourceWith {
     filter = name: _:
