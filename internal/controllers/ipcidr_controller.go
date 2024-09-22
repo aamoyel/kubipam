@@ -221,10 +221,7 @@ func IPCidrProgressing(o *ipamv1alpha1.IPCidr) {
 	})
 }
 
-func (r *IPCidrReconciler) patchIPCidrStatus(
-	ctx context.Context,
-	ipCidr *ipamv1alpha1.IPCidr,
-) error {
+func (r *IPCidrReconciler) patchIPCidrStatus(ctx context.Context, ipCidr *ipamv1alpha1.IPCidr) error {
 	key := client.ObjectKeyFromObject(ipCidr)
 	latest := &ipamv1alpha1.IPCidr{}
 	if err := r.Client.Get(ctx, key, latest); err != nil {
@@ -337,10 +334,7 @@ func (r *IPCidrReconciler) isCidrOverlapping(ctx context.Context, cr *ipamv1alph
 }
 
 // ipCidrReconcileRequests returns a list of reconcile.Request based on the ipcidr resource.
-func ipCidrReconcileRequests(
-	ctx context.Context,
-	mgr manager.Manager,
-) ([]reconcile.Request, error) {
+func ipCidrReconcileRequests(ctx context.Context, mgr manager.Manager) ([]reconcile.Request, error) {
 	IPCidrList := &ipamv1alpha1.IPCidrList{}
 	err := mgr.GetClient().List(ctx, IPCidrList)
 	if err != nil {
